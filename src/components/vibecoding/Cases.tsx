@@ -19,7 +19,13 @@ const cases: CaseItem[] = [
     from: "#334155",
     to: "#0f172a",
   },
-  { title: "E-commerce и аналитика", amount: "350 000 ₸", days: 45, from: "#166534", to: "#052e16" },
+  {
+    title: "E-commerce и аналитика",
+    amount: "350 000 ₸",
+    days: 45,
+    from: "#166534",
+    to: "#052e16",
+  },
   { title: "Юридические услуги", amount: "200 800 ₸", days: 48, from: "#1e293b", to: "#020617" },
 ];
 

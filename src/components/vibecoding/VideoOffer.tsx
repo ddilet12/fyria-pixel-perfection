@@ -72,12 +72,7 @@ export function VideoOffer() {
         <div className="mt-6 grid grid-cols-1 divide-y divide-white/10 rounded-xl bg-black sm:grid-cols-3 sm:divide-x sm:divide-y-0">
           <Stat label="Сайт в Казахстане стоит:" value="300 000 ₸" hint="минимум" />
           <Stat label="Курс стоит:" value="50 000 ₸" />
-          <Stat
-            label="Твоя выгода:"
-            value="Первая сделка"
-            hint="закроет курс в 6 раз"
-            accent
-          />
+          <Stat label="Твоя выгода:" value="Первая сделка" hint="закроет курс в 6 раз" accent />
         </div>
       </div>
     </section>
