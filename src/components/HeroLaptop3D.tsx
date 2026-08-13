@@ -41,6 +41,9 @@ export function HeroLaptop3D({ className }: Props) {
       }
 
       const isCoarse = window.matchMedia("(pointer: coarse)").matches;
+      const reduceMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
       const maxDpr = isCoarse ? 1.5 : 2;
       const setPixelRatio = () =>
         renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, maxDpr));
@@ -53,6 +56,11 @@ export function HeroLaptop3D({ className }: Props) {
       renderer.domElement.style.height = "100%";
       renderer.domElement.style.display = "block";
       host.appendChild(renderer.domElement);
+
+      if (!reduceMotion) {
+        host.style.opacity = "0";
+        host.style.transition = "opacity 600ms ease-out";
+      }
 
       const scene = new THREE.Scene();
 
@@ -114,7 +122,9 @@ export function HeroLaptop3D({ className }: Props) {
       pad.position.set(0, 0.145, 0.62);
       laptop.add(pad);
 
-      // Lid (hinged slightly open, tilted back)
+      // Lid (hinged; opens from closed to slightly-open, tilted back)
+      const LID_CLOSED_X = -1.55; // resting flat on the base
+      const LID_OPEN_X = -0.19; // working pose
       const lid = new THREE.Group();
       const lidShell = new THREE.Mesh(new RoundedBoxGeometry(3.4, 2.25, 0.1, 4, 0.06), alu);
       lidShell.position.y = 1.125;
@@ -123,7 +133,7 @@ export function HeroLaptop3D({ className }: Props) {
       screen.position.set(0, 1.125, 0.052);
       lid.add(screen);
       lid.position.set(0, 0.12, -1.13);
-      lid.rotation.x = -0.19;
+      lid.rotation.x = reduceMotion ? LID_OPEN_X : LID_CLOSED_X;
       laptop.add(lid);
 
       laptop.rotation.x = 0.06;
@@ -153,18 +163,43 @@ export function HeroLaptop3D({ className }: Props) {
       let raf = 0;
       let running = true;
 
+      // One-time "opening" intro: lid swings open and the spin/float eases
+      // in, starting the first time the host is actually visible.
+      const INTRO_MS = 1100;
+      let introStart: number | null = null;
+      const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
+
       const frame = (now: number) => {
         raf = requestAnimationFrame(frame);
         const dt = Math.min((now - last) / 1000, 0.05);
         last = now;
         if (!running) return;
-        elapsed += dt;
+
+        let eased = 1;
+        if (!reduceMotion) {
+          if (introStart === null) introStart = now;
+          const introT = Math.min((now - introStart) / INTRO_MS, 1);
+          eased = easeOutCubic(introT);
+          lid.rotation.x = LID_CLOSED_X + (LID_OPEN_X - LID_CLOSED_X) * eased;
+        }
+
+        elapsed += dt * eased;
         pivot.rotation.y = elapsed * SPEED;
         // gentle vertical float, period is a divisor-free sine — always smooth
         pivot.position.y = Math.sin(elapsed * 0.55) * 0.055;
         renderer.render(scene, camera);
       };
       raf = requestAnimationFrame(frame);
+
+      if (!reduceMotion) {
+        // Double rAF: guarantees the browser paints opacity:0 first, so the
+        // transition to opacity:1 reliably fires across browsers.
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            host.style.opacity = "1";
+          });
+        });
+      }
 
       const onVisibility = () => {
         last = performance.now();
